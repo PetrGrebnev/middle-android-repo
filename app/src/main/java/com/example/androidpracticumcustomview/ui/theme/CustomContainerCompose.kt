@@ -15,7 +15,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
@@ -46,7 +45,7 @@ fun CustomContainerCompose(
     var enabledAnimateAlpha by remember { mutableStateOf(false) }
 
     var animateOffsetY = remember { Animatable(offsetTargetValue, Offset.VectorConverter) }
-    val animateAlpha : Float by animateFloatAsState(
+    val animateAlpha: Float by animateFloatAsState(
         targetValue = if (enabledAnimateAlpha) 1f else 0f,
         animationSpec = tween(alphaDuration),
         label = "alpha"
@@ -74,34 +73,36 @@ fun CustomContainerCompose(
                 heightParent = it.height.toFloat()
             }
     ) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .offset {
-                    IntOffset(
-                        animateOffsetY.value.x.roundToInt(),
-                        animateOffsetY.value.y.roundToInt()
-                    )
-                }
-                .graphicsLayer{ alpha = animateAlpha }
-        ) {
-            if (firstChild != null) {
+        if (firstChild != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset {
+                        IntOffset(
+                            animateOffsetY.value.x.roundToInt(),
+                            animateOffsetY.value.y.roundToInt()
+                        )
+                    }
+                    .graphicsLayer { alpha = animateAlpha }
+            ) {
+
                 firstChild()
             }
         }
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-               .offset {
-                    IntOffset(
-                        animateOffsetY.value.x.roundToInt(),
-                        animateOffsetY.value.y.roundToInt().unaryMinus()
-                    )
-                }
-                .graphicsLayer{ alpha = animateAlpha }
-        ) {
-            if (secondChild != null) {
+        if (secondChild != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .offset {
+                        IntOffset(
+                            animateOffsetY.value.x.roundToInt(),
+                            animateOffsetY.value.y.roundToInt().unaryMinus()
+                        )
+                    }
+                    .graphicsLayer { alpha = animateAlpha }
+            ) {
+
                 secondChild()
             }
         }

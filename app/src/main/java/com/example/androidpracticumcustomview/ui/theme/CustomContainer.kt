@@ -1,13 +1,14 @@
 package com.example.androidpracticumcustomview.ui.theme
 
 import android.content.Context
-import android.graphics.Canvas
 import android.util.AttributeSet
 import android.view.Gravity
 import android.view.View
+import android.view.animation.AlphaAnimation
+import android.view.animation.AnimationSet
+import android.view.animation.TranslateAnimation
 import android.widget.FrameLayout
 import androidx.core.view.children
-import androidx.core.view.isVisible
 
 /*
 Задание:
@@ -25,8 +26,6 @@ class CustomContainer @JvmOverloads constructor(
     private val translationDuration: Long = 5000
 ) : FrameLayout(context, attrs) {
 
-    val animationView: HashMap<View, Boolean> = hashMapOf()
-
     init {
         setWillNotDraw(false)
     }
@@ -42,8 +41,8 @@ class CustomContainer @JvmOverloads constructor(
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
         children.forEach { childView ->
-            if(!animationView.getOrDefault(childView, false)) {
-                childStartAnimation(childView, height)
+            if (childView.isDirty) {
+                childView.animation = childStartAnimation(childView, height)
             }
         }
     }
@@ -62,26 +61,35 @@ class CustomContainer @JvmOverloads constructor(
                 }
             )
         }
-        animationView.put(child, false)
         super.addView(child)
     }
 
-    private fun childStartAnimation(child: View, parentHeight: Int) {
-        child.apply {
-            alpha = 0f
-            translationY = when (indexOfChild(child)) {
-                1 -> (parentHeight.toFloat() / 2).unaryMinus()
-                else -> parentHeight.toFloat() / 2
-            }
-        }
-        child.animate()
-            .alpha(1f)
-            .setDuration(alphaDuration)
-            .translationY(0f)
-            .setDuration(translationDuration)
+    private fun childStartAnimation(child: View, parentHeight: Int): AnimationSet {
+        val animations = AnimationSet(true)
+        animations.addAnimation(createAlphaAnimate())
+        animations.addAnimation(createTranslationYAnimation(indexOfChild(child), parentHeight))
 
-        child.invalidate()
-        animationView.put(child, true)
+        animations.start()
+        return animations
+    }
+
+    private fun createAlphaAnimate(): AlphaAnimation {
+        val animation = AlphaAnimation(0f, 1f)
+        animation.duration = alphaDuration
+        return animation
+    }
+
+    private fun createTranslationYAnimation(
+        indexChild: Int,
+        parentHeight: Int
+    ): TranslateAnimation {
+        val yFrom = when (indexChild) {
+            1 -> (parentHeight.toFloat() / 2).unaryMinus()
+            else -> parentHeight.toFloat() / 2
+        }
+        val animation = TranslateAnimation(0f, 0f, yFrom, 0f)
+        animation.duration = translationDuration
+        return animation
     }
 
     private val MAX_CHILD_VIEW = 2
