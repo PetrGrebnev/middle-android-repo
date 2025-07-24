@@ -2,8 +2,13 @@ package com.example.androidpracticumcustomview.ui.theme
 
 import android.content.Context
 import android.util.AttributeSet
+import android.view.Gravity
 import android.view.View
+import android.view.animation.AlphaAnimation
+import android.view.animation.AnimationSet
+import android.view.animation.TranslateAnimation
 import android.widget.FrameLayout
+import androidx.core.view.children
 
 /*
 Задание:
@@ -15,7 +20,10 @@ import android.widget.FrameLayout
  */
 
 class CustomContainer @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null
+    context: Context,
+    attrs: AttributeSet? = null,
+    private val alphaDuration: Long = 2000,
+    private val translationDuration: Long = 5000
 ) : FrameLayout(context, attrs) {
 
     init {
@@ -24,17 +32,66 @@ class CustomContainer @JvmOverloads constructor(
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        // TODO
-        // ...
+        val widthSize = MeasureSpec.getSize(widthMeasureSpec)
+        val heightSize = MeasureSpec.getSize(heightMeasureSpec)
+
+        setMeasuredDimension(widthSize, heightSize)
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        // TODO
-        // ...
+        super.onLayout(changed, left, top, right, bottom)
+        children.forEach { childView ->
+            if (childView.isDirty) {
+                childView.animation = childStartAnimation(childView, height)
+            }
+        }
     }
 
     override fun addView(child: View) {
-        // TODO
-        // ...
+        if (childCount > MAX_CHILD_VIEW) {
+            throw IllegalStateException(MESSGE_ERROR_MOST_VIEW)
+        }
+        child.apply {
+            layoutParams = LayoutParams(
+                LayoutParams.WRAP_CONTENT,
+                LayoutParams.WRAP_CONTENT,
+                when (childCount) {
+                    1 -> Gravity.BOTTOM
+                    else -> Gravity.TOP
+                }
+            )
+        }
+        super.addView(child)
     }
+
+    private fun childStartAnimation(child: View, parentHeight: Int): AnimationSet {
+        val animations = AnimationSet(true)
+        animations.addAnimation(createAlphaAnimate())
+        animations.addAnimation(createTranslationYAnimation(indexOfChild(child), parentHeight))
+
+        animations.start()
+        return animations
+    }
+
+    private fun createAlphaAnimate(): AlphaAnimation {
+        val animation = AlphaAnimation(0f, 1f)
+        animation.duration = alphaDuration
+        return animation
+    }
+
+    private fun createTranslationYAnimation(
+        indexChild: Int,
+        parentHeight: Int
+    ): TranslateAnimation {
+        val yFrom = when (indexChild) {
+            1 -> (parentHeight.toFloat() / 2).unaryMinus()
+            else -> parentHeight.toFloat() / 2
+        }
+        val animation = TranslateAnimation(0f, 0f, yFrom, 0f)
+        animation.duration = translationDuration
+        return animation
+    }
+
+    private val MAX_CHILD_VIEW = 2
+    private val MESSGE_ERROR_MOST_VIEW = "Can't be more than 2 child view"
 }
